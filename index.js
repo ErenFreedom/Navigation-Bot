@@ -1,16 +1,27 @@
 const { Client, GatewayIntentBits } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v9");
-require("dotenv").config();
+const http = require("http");
 
-const token = process.env.DISCORD_TOKEN;
-const clientId = process.env.CLIENT_ID;
-const guildId = process.env.GUILD_ID;
+// ✅ Fetch from Railway-provided env vars (no dotenv required on Railway)
+const token = process.env.DISCORD_TOKEN || '';
+const clientId = process.env.CLIENT_ID || '';
+const guildId = process.env.GUILD_ID || '';
 
+// ✅ Fail-fast if missing anything
+if (!token || !clientId || !guildId) {
+    console.error("❌ One or more environment variables are missing:");
+    console.error("DISCORD_TOKEN:", token ? "✅ Present" : "❌ Missing");
+    console.error("CLIENT_ID:", clientId ? "✅ Present" : "❌ Missing");
+    console.error("GUILD_ID:", guildId ? "✅ Present" : "❌ Missing");
+    process.exit(1);
+}
+
+// ✅ Setup bot client
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once("ready", () => {
-    console.log("Ready!");
+    console.log("✅ Bot is ready!");
 });
 
 client.on("interactionCreate", async (interaction) => {
@@ -41,40 +52,31 @@ client.on("interactionCreate", async (interaction) => {
 
 client.login(token);
 
+// ✅ Slash commands setup
 const commands = [
-    {
-        name: "help",
-        description: "List all commands",
-    },
-    {
-        name: "navigation",
-        description: "Get navigation help",
-    },
-    {
-        name: "morecommands",
-        description: "List more commands",
-    },
+    { name: "help", description: "List all commands" },
+    { name: "navigation", description: "Get navigation help" },
+    { name: "morecommands", description: "List more commands" },
 ];
 
 const rest = new REST({ version: "9" }).setToken(token);
 
 (async () => {
     try {
-        console.log("Started refreshing application (/) commands.");
+        console.log("🌐 Started refreshing application (/) commands...");
 
-        await rest.put(Routes.applicationGuildCommands(clientId, guildId), {
-            body: commands,
-        });
+        await rest.put(
+            Routes.applicationGuildCommands(clientId, guildId),
+            { body: commands }
+        );
 
-        console.log("Successfully reloaded application (/) commands.");
+        console.log("✅ Successfully reloaded application (/) commands.");
     } catch (error) {
-        console.error(error);
+        console.error("❌ Error refreshing commands:", error);
     }
 })();
 
-
-const http = require('http');
-
+// ✅ Keepalive server for Railway/Render
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is running!\n');
@@ -82,5 +84,5 @@ const server = http.createServer((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`🌐 HTTP server listening on port ${PORT}`);
 });
