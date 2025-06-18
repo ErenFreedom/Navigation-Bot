@@ -1,14 +1,18 @@
+// ✅ Load .env variables from .env file
+require("dotenv").config();
+
 const { Client, GatewayIntentBits } = require("discord.js");
 const { REST } = require("@discordjs/rest");
 const { Routes } = require("discord-api-types/v9");
 const http = require("http");
 
-// ✅ Fetch from Railway-provided env vars (no dotenv required on Railway)
+// ✅ Load env vars
 const token = process.env.DISCORD_TOKEN || '';
 const clientId = process.env.CLIENT_ID || '';
 const guildId = process.env.GUILD_ID || '';
+const PORT = process.env.PORT || 7000;
 
-// ✅ Fail-fast if missing anything
+// ✅ Fail-fast if missing
 if (!token || !clientId || !guildId) {
     console.error("❌ One or more environment variables are missing:");
     console.error("DISCORD_TOKEN:", token ? "✅ Present" : "❌ Missing");
@@ -17,13 +21,14 @@ if (!token || !clientId || !guildId) {
     process.exit(1);
 }
 
-// ✅ Setup bot client
+// ✅ Initialize Discord client
 const client = new Client({ intents: [GatewayIntentBits.Guilds] });
 
 client.once("ready", () => {
     console.log("✅ Bot is ready!");
 });
 
+// ✅ Command handlers
 client.on("interactionCreate", async (interaction) => {
     if (!interaction.isCommand()) return;
 
@@ -50,15 +55,17 @@ client.on("interactionCreate", async (interaction) => {
     }
 });
 
+// ✅ Login the bot
 client.login(token);
 
-// ✅ Slash commands setup
+// ✅ Slash commands
 const commands = [
     { name: "help", description: "List all commands" },
     { name: "navigation", description: "Get navigation help" },
     { name: "morecommands", description: "List more commands" },
 ];
 
+// ✅ Register slash commands
 const rest = new REST({ version: "9" }).setToken(token);
 
 (async () => {
@@ -76,13 +83,12 @@ const rest = new REST({ version: "9" }).setToken(token);
     }
 })();
 
-// ✅ Keepalive server for Railway/Render
+// ✅ Simple keep-alive server
 const server = http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/plain' });
     res.end('Bot is running!\n');
 });
 
-const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
     console.log(`🌐 HTTP server listening on port ${PORT}`);
 });
